@@ -6,6 +6,9 @@ An interactive data pipeline and visualization tool for analyzing global YouTube
 
 This project analyzes YouTube trending video data across 10 countries (CA, DE, FR, GB, IN, JP, KR, MX, RU, US) to identify engagement patterns, popular categories, and trending hashtags. The system processes 539.22 MB of data using distributed computing with Spark and presents results through an interactive map-based web interface.
 
+![Interactive world map with country popup and search results](images/interactive-map.png)
+*Clickable world map: each country's popup shows engagement rate, top categories, and top tags — all backed by Spark-processed MySQL tables. The side panel supports keyword search filtered by metric and country.*
+
 ## Features
 
 - **Interactive World Map**: Click on any country to view engagement metrics, top categories, and trending hashtags
@@ -32,7 +35,7 @@ Interactive Web Interface (Folium Maps)
 
 - **Data Processing**: Apache Spark 3.5.0, PySpark
 - **Database**: MySQL 8.0.43
-- **Backend**: Flask, Python 3.10.19
+- **Backend**: Flask, Python 3.10
 - **Frontend**: Folium (Leaflet.js), HTML/CSS
 - **Data Analysis**: Pandas, NumPy
 
@@ -40,11 +43,12 @@ Interactive Web Interface (Folium Maps)
 
 Source: [YouTube Trending Videos Dataset (Kaggle)](https://www.kaggle.com/datasets/datasnaek/youtube-new)
 
-**Size**: 539.22 MB  
-**Countries**: CA, DE, FR, GB, IN, JP, KR, MX, RU, US  
+**Size**: 539.22 MB
+**Countries**: CA, DE, FR, GB, IN, JP, KR, MX, RU, US
 **Records**: 48,137+ trending videos
 
 ### Key Attributes
+
 - Video metadata (title, channel, category, tags)
 - Engagement metrics (views, likes, dislikes, comments)
 - Temporal data (trending date, publish time)
@@ -53,41 +57,47 @@ Source: [YouTube Trending Videos Dataset (Kaggle)](https://www.kaggle.com/datase
 ## Installation
 
 ### Prerequisites
-```bash
-Python 3.10.19
+
+```
+Python 3.10
 Apache Spark 3.5.0
-MySQL 8.0.43
+MySQL 8.0
 MySQL Connector/J 8.3.0
 ```
 
 ### Setup
 
 1. **Clone the repository**
-```bash
-git clone https://github.com/yourusername/youtube-trends-analysis.git
-cd youtube-trends-analysis
+
+```
+git clone https://github.com/akangbang/Youtube-Trending-Video-Analysis.git
+cd Youtube-Trending-Video-Analysis
 ```
 
 2. **Create and activate Spark environment**
-```bash
-conda create -n spark_env python=3.10.19
+
+```
+conda create -n spark_env python=3.10
 conda activate spark_env
 ```
 
 3. **Install Python dependencies**
-```bash
+
+```
 pip install pyspark pandas mysql-connector-python flask folium
 ```
 
 4. **Download MySQL Connector**
-```bash
+
+```
 # Download MySQL Connector/J 8.3.0
 # Place in ~/mysql-connector/mysql-connector-j-8.3.0/
 ```
 
 5. **Set up MySQL database**
-```bash
-cs179g_db_start
+
+```
+# Make sure the MySQL server is running, then:
 mysql -h 127.0.0.1 -u root
 
 # Create database
@@ -95,6 +105,7 @@ CREATE DATABASE yt169;
 ```
 
 6. **Download dataset**
+
 - Download from [Kaggle](https://www.kaggle.com/datasets/datasnaek/youtube-new)
 - Extract to `dataset/` directory
 
@@ -102,13 +113,14 @@ CREATE DATABASE yt169;
 
 ### 1. Process Data with Spark
 
-```bash
+```
 conda activate spark_env
 cd part_2
 python part_2.py
 ```
 
 This script will:
+
 - Read CSV and JSON files for all countries
 - Clean and transform data (dates, tags, categories)
 - Calculate engagement metrics
@@ -116,22 +128,29 @@ This script will:
 - Write results to MySQL database
 
 **Expected tables in MySQL:**
+
 - `engagement_metrics` - Video engagement rates
 - `category_count` - Category frequencies by country
 - `tag_count` - Tag frequencies by country
 
+![Spark output stored in MySQL](images/sql-stored-tables.png)
+*Verifying the pipeline: Spark's output tables land in MySQL, with all 48,137 rows accounted for.*
+
 ### 2. Run the Web Application
 
-```bash
+```
 cd part_3
 python app.py
 ```
 
 Access the application at: `http://127.0.0.1:5000`
 
+![Search panel with filtered results](images/search-panel.png)
+*Search interface: keyword lookup filtered by metric type and country, ranked by engagement rate.*
+
 ### 3. Query Database Directly (Optional)
 
-```bash
+```
 mysql -h 127.0.0.1 -u root -D yt169
 
 # Example queries
@@ -140,96 +159,111 @@ SELECT * FROM category_count WHERE country = 'US' ORDER BY num_categories DESC;
 SELECT * FROM tag_count WHERE country = 'US' ORDER BY num_tags DESC LIMIT 20;
 ```
 
+![Top 20 US videos by engagement rate](images/sql-top20-engagement.png)
+*Example query: the top 20 highest-engagement US videos — dominated by music releases and K-pop, with engagement rates of 0.18–0.24, far above typical YouTube averages.*
+
 ## Database Schema
 
 ### engagement_metrics
-| Column | Type | Description |
-|--------|------|-------------|
-| country | VARCHAR | Country code |
-| trending_year | INT | Year video trended |
-| upload_year | INT | Year video was uploaded |
-| category | VARCHAR | Video category |
-| title | VARCHAR | Video title |
-| video_count | INT | Number of times video trended |
-| avg_views | INT | Average views |
-| avg_likes | INT | Average likes |
-| avg_comments | INT | Average comments |
-| engagement_rate | FLOAT | (likes + comments) / views |
+
+| Column           | Type    | Description                   |
+| ---------------- | ------- | ----------------------------- |
+| country          | VARCHAR | Country code                  |
+| trending_year    | INT     | Year video trended            |
+| upload_year      | INT     | Year video was uploaded       |
+| category         | VARCHAR | Video category                |
+| title            | VARCHAR | Video title                   |
+| video_count      | INT     | Number of times video trended |
+| avg_views        | INT     | Average views                 |
+| avg_likes        | INT     | Average likes                 |
+| avg_comments     | INT     | Average comments              |
+| engagement_rate  | FLOAT   | (likes + comments) / views    |
 
 ### category_count
-| Column | Type | Description |
-|--------|------|-------------|
-| country | VARCHAR | Country code |
-| category | VARCHAR | Category name |
-| num_categories | INT | Frequency count |
+
+| Column          | Type    | Description     |
+| --------------- | ------- | --------------- |
+| country         | VARCHAR | Country code    |
+| category        | VARCHAR | Category name   |
+| num_categories  | INT     | Frequency count |
 
 ### tag_count
-| Column | Type | Description |
-|--------|------|-------------|
-| country | VARCHAR | Country code |
-| upload_year | INT | Upload year |
-| tag | VARCHAR | Tag text |
-| num_tags | INT | Frequency count |
+
+| Column       | Type    | Description     |
+| ------------ | ------- | --------------- |
+| country      | VARCHAR | Country code    |
+| upload_year  | INT     | Upload year     |
+| tag          | VARCHAR | Tag text        |
+| num_tags     | INT     | Frequency count |
 
 ## Key Findings
 
 ### Engagement Patterns
+
 - **Music and Entertainment** dominate trending lists globally
 - **Engagement rate** (0.23-0.33) matters more than raw view counts
 - K-pop content (BTS, j-hope) shows exceptionally high engagement
 - Active fan communities drive engagement regardless of total views
 
 ### Regional Differences
+
 - **US, CA, IN**: High frequency of humor-related tags ("funny", "comedy")
 - **JP, RU**: Language-specific tags dominate
 - **US, GB, IN**: Higher engagement for Music and Entertainment categories
 
 ### Performance Insights
-- **1 Worker**: 8.47s (full dataset)
-- **2 Workers**: 0.78s (full dataset) - **91% improvement**
-- Spark's distributed processing significantly reduces runtime on large datasets
-- Startup overhead dominates performance on small datasets (<10K rows)
+
+- **Engagement computation (full dataset)**: 8.47s with 1 worker → 0.78s with 2 workers (**91% improvement**)
+- **Hashtag-frequency computation (full dataset)**: 3.20s with 1 worker → 2.20s with 2 workers
+- Spark's distributed processing significantly reduces runtime on compute-heavy jobs over large datasets
+- On smaller jobs, startup and shuffle overhead dominates, so extra workers add little (a 10K-row subset ran in 0.52s with either 1 or 2 workers)
 
 ## Web Interface Features
 
 ### Interactive Map
+
 - Click country markers to view statistics
 - Collapsible sections for Engagement, Categories, and Tags
 - Tooltips show country names on hover
 
 ### Search Panel
+
 - **Search Query**: Find specific videos by title, category, or tag
 - **Type Filter**: Choose between Engagement Rate, Categories, or Tags
 - **Country Filter**: Select specific country or view all
 - **Results Display**: Ranked results with engagement metrics
 
 ### Top-N Selector
+
 - Toggle between top 5, 10, or 15 results
 - Dynamically updates map popups
 
 ## Performance Benchmarks
 
 ### Dataset Sizes
+
 - All Countries: 488 MB
 - United States Only: 60 MB
 
 ### Execution Times (Hashtag Computation)
-| Configuration | Time |
-|--------------|------|
-| US (small), 1 worker | 1.24s |
-| All Countries, 1 worker | 3.20s |
+
+| Configuration            | Time  |
+| ------------------------ | ----- |
+| US (small), 1 worker     | 1.24s |
+| All Countries, 1 worker  | 3.20s |
 | All Countries, 2 workers | 2.20s |
 
 ## Project Structure
 
 ```
-youtube-trends-analysis/
+Youtube-Trending-Video-Analysis/
 ├── dataset/
 │   ├── CAvideos.csv
 │   ├── CA_category_id.json
 │   ├── DEvideos.csv
 │   ├── DE_category_id.json
 │   └── ... (other countries)
+├── images/                # README screenshots
 ├── part_2/
 │   └── part_2.py          # Spark data processing
 ├── part_3/
@@ -241,18 +275,22 @@ youtube-trends-analysis/
 ## Challenges & Solutions
 
 ### Data Cleaning
+
 - **Challenge**: Inconsistent date formats across countries
 - **Solution**: Standardized parsing with fallback formats
 
 ### Tag Processing
+
 - **Challenge**: Mixed delimiters and special characters in tags
 - **Solution**: Regex-based cleaning and normalization
 
 ### Database Integration
+
 - **Challenge**: Schema mismatches between Spark and MySQL
 - **Solution**: Pre-validation of DataFrame schemas before JDBC writes
 
 ### Performance
+
 - **Challenge**: Slow queries on single-worker configuration
 - **Solution**: Implemented multi-worker Spark setup with caching
 
